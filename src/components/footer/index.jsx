@@ -23,10 +23,11 @@ export default function Footer() {
         <Styled.FooterInner>
             <Styled.Brand>Plan smarter. Shop easier.</Styled.Brand>
             <Styled.Columns>
-                <Styled.Column><Styled.Label>Links</Styled.Label>{links.map(([label, href, IconComponent]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer"><IconComponent />{label}</a>)}</Styled.Column>
-                <Styled.Column><Styled.Label>Support</Styled.Label>{support.map(([label, href, IconComponent]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer"><IconComponent />{label}</a>)}</Styled.Column>
+                <Styled.Column><Styled.Label>Links</Styled.Label>{links.map(([label, href, IconComponent]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{createElement(IconComponent)}{label}</a>)}</Styled.Column>
+                <Styled.Column><Styled.Label>Support</Styled.Label>{support.map(([label, href, IconComponent]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{createElement(IconComponent)}{label}</a>)}</Styled.Column>
             </Styled.Columns>
         </Styled.FooterInner>
         <Styled.Copyright>Copyright &copy; {new Date().getFullYear()} <a href="https://www.ashishranjan.net" target="_blank" rel="noopener noreferrer">Ashish Ranjan</a></Styled.Copyright>
     </Styled.Footer>;
 }
+import { createElement } from "react";
