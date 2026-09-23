@@ -7,9 +7,10 @@ const focusRing = "0 0 0 3px hsl(0 0% 100% / 0.15)";
 export const Styled = {
     Page: styled.div`
         min-height: 100dvh;
+        padding-top: 72px;
     `,
     Container: styled.div`
-        max-width: 980px;
+        max-width: 1040px;
         margin: 0 auto;
         padding: 32px 18px 56px;
     `,
@@ -50,7 +51,8 @@ export const Styled = {
         border-radius: 16px;
         padding: 16px;
         border: ${border};
-        background: transparent;
+        background: hsl(220 20% 12% / 0.7);
+        box-shadow: 0 18px 50px hsl(0 0% 0% / 0.14);
     `,
     FormRow: styled.div`
         display: grid;
@@ -108,7 +110,7 @@ export const Styled = {
         border-radius: 10px;
         font-weight: 600;
         cursor: pointer;
-        transition: transform 0.05s ease;
+        transition: border-color 180ms ease, box-shadow 180ms ease;
         &:disabled {
             opacity: 0.5;
             cursor: not-allowed;
@@ -119,6 +121,10 @@ export const Styled = {
         &:focus-visible {
             box-shadow: ${focusRing};
         }
+        &:hover:not(:disabled) {
+            border-color: hsl(226 100% 72% / 0.6);
+            box-shadow: 0 0 0 3px hsl(226 100% 72% / 0.1);
+        }
     `,
     Button: styled.button`
         border: ${border};
@@ -127,11 +133,16 @@ export const Styled = {
         padding: 10px 14px;
         border-radius: 10px;
         cursor: pointer;
+        transition: border-color 180ms ease, box-shadow 180ms ease;
         &:active {
             transform: translateY(1px);
         }
         &:focus-visible {
             box-shadow: ${focusRing};
+        }
+        &:hover {
+            border-color: hsl(226 100% 72% / 0.6);
+            box-shadow: 0 0 0 3px hsl(226 100% 72% / 0.1);
         }
     `,
     DangerButton: styled.button`
@@ -141,11 +152,16 @@ export const Styled = {
         padding: 10px 14px;
         border-radius: 10px;
         cursor: pointer;
+        transition: border-color 180ms ease, box-shadow 180ms ease;
         &:active {
             transform: translateY(1px);
         }
         &:focus-visible {
             box-shadow: 0 0 0 3px hsl(0 70% 60% / 0.25);
+        }
+        &:hover {
+            border-color: hsl(0 70% 70% / 0.95);
+            box-shadow: 0 0 0 3px hsl(0 70% 60% / 0.12);
         }
     `,
     Toolbar: styled.div`
@@ -210,6 +226,11 @@ export const Styled = {
             css`
                 opacity: 0.6;
             `}
+        transition: border-color 180ms ease, box-shadow 180ms ease;
+        &:hover {
+            border-color: hsl(226 100% 72% / 0.45);
+            box-shadow: 0 10px 28px hsl(0 0% 0% / 0.16);
+        }
     `,
     ItemLeft: styled.div`
         display: flex;
@@ -264,11 +285,16 @@ export const Styled = {
         padding: 8px 10px;
         cursor: pointer;
         color: inherit;
+        transition: border-color 180ms ease, box-shadow 180ms ease;
         &:active {
             transform: translateY(1px);
         }
         &:focus-visible {
             box-shadow: ${focusRing};
+        }
+        &:hover {
+            border-color: hsl(226 100% 72% / 0.6);
+            box-shadow: 0 0 0 3px hsl(226 100% 72% / 0.1);
         }
     `,
     FooterNote: styled.p`

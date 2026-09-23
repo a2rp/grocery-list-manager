@@ -3,7 +3,7 @@ import { Styled } from "./styled";
 export default function About() {
     return (
         <>
-            <Styled.Wrapper>
+            <Styled.Wrapper id="about">
                 <Styled.Heading>About Developer</Styled.Heading>
                 <Styled.Row>
                     <Styled.Col1>Name</Styled.Col1>

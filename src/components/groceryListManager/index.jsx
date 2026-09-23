@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FiCheck, FiEdit2, FiMinus, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Styled } from "./styled";
 
 const STORAGE_KEY = "grocery-list.v1";
@@ -23,13 +24,13 @@ export default function GroceryListManager() {
     const [confirm, setConfirm] = useState(null);
     const askConfirm = (opts) =>
         setConfirm({ title: "Are you sure?", confirmText: "Confirm", cancelText: "Cancel", tone: "default", ...opts });
-    const handleConfirm = () => { const fn = confirm?.onConfirm; setConfirm(null); if (fn) fn(); };
+    const handleConfirm = useCallback(() => { const fn = confirm?.onConfirm; setConfirm(null); if (fn) fn(); }, [confirm]);
     useEffect(() => {
         if (!confirm) return;
         const onKey = (e) => { if (e.key === "Escape") setConfirm(null); if (e.key === "Enter") handleConfirm(); };
         document.addEventListener("keydown", onKey);
         return () => document.removeEventListener("keydown", onKey);
-    }, [confirm]);
+    }, [confirm, handleConfirm]);
 
     useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }, [items]);
 
@@ -96,12 +97,12 @@ export default function GroceryListManager() {
     };
 
     return (
-        <Styled.Page>
+        <Styled.Page id="grocery-list">
             <Styled.Container>
                 <Styled.Header>
                     <div>
                         <Styled.Title>Grocery List</Styled.Title>
-                        <Styled.Sub>Categories • Quantities • LocalStorage</Styled.Sub>
+                        <Styled.Sub>Categories • quantities • local storage</Styled.Sub>
                     </div>
                     <Styled.BadgeRow>
                         <Styled.Badge>{totals.open} to buy</Styled.Badge>
@@ -150,7 +151,7 @@ export default function GroceryListManager() {
                         </Styled.Select>
 
                         <Styled.Input
-                            placeholder="Search item/category…"
+                            placeholder="Search item or category..."
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
                             aria-label="Search"
@@ -167,6 +168,7 @@ export default function GroceryListManager() {
                                 onConfirm: markVisibleBought
                             })}
                         >
+                            <FiCheck aria-hidden="true" />
                             Mark visible bought
                         </Styled.Button>
 
@@ -180,6 +182,7 @@ export default function GroceryListManager() {
                                 onConfirm: clearBought
                             })}
                         >
+                            <FiTrash2 aria-hidden="true" />
                             Clear bought
                         </Styled.DangerButton>
                     </Styled.RowWrap>
@@ -225,20 +228,20 @@ export default function GroceryListManager() {
                                         </Styled.ItemLeft>
 
                                         <Styled.ItemRight>
-                                            <Styled.IconButton onClick={() => incQty(it.id, +1)} aria-label="Increase">＋</Styled.IconButton>
-                                            <Styled.IconButton onClick={() => incQty(it.id, -1)} aria-label="Decrease">－</Styled.IconButton>
-                                            <Styled.IconButton onClick={() => startEdit(it.id)} aria-label="Edit">✏️</Styled.IconButton>
+                                            <Styled.IconButton onClick={() => incQty(it.id, +1)} aria-label="Increase quantity"><FiPlus aria-hidden="true" /></Styled.IconButton>
+                                            <Styled.IconButton onClick={() => incQty(it.id, -1)} aria-label="Decrease quantity"><FiMinus aria-hidden="true" /></Styled.IconButton>
+                                            <Styled.IconButton onClick={() => startEdit(it.id)} aria-label="Edit item"><FiEdit2 aria-hidden="true" /></Styled.IconButton>
                                             <Styled.IconButton
                                                 onClick={() => askConfirm({
                                                     title: "Delete item?",
-                                                    message: `Delete “${it.name}”?`,
+                                                    message: `Delete "${it.name}"?`,
                                                     confirmText: "Delete",
                                                     tone: "danger",
                                                     onConfirm: () => removeItem(it.id)
                                                 })}
                                                 aria-label="Delete"
                                             >
-                                                🗑️
+                                                <FiTrash2 aria-hidden="true" />
                                             </Styled.IconButton>
                                         </Styled.ItemRight>
                                     </Styled.Item>

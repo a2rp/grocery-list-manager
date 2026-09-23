@@ -19,10 +19,23 @@ html {
 }
 
 body {
-    background-color: #000;
-    color: #aaa;
+    background:
+        radial-gradient(circle at 10% 0%, hsl(226 70% 28% / 0.18), transparent 30rem),
+        #080b11;
+    color: #b7bfcc;
     font-family: "Poppins", sans-serif;
     font-size: 13px;
+}
+
+button,
+input,
+select {
+    font: inherit;
+}
+
+::selection {
+    color: #080b11;
+    background: #aeb8ff;
 }
 
 h1,

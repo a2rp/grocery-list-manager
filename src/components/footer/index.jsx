@@ -1,3 +1,4 @@
+import { createElement } from "react";
 import { FaCodepen, FaFacebook, FaGithub, FaLinkedin, FaYoutube } from "react-icons/fa6";
 import { FiCoffee, FiHeart, FiMail, FiMessageCircle, FiUser } from "react-icons/fi";
 import { Styled } from "./styled";
@@ -18,16 +19,28 @@ const support = [
     ["Patreon", "https://patreon.com/a2rp", FiMessageCircle],
 ];
 
+const allLinks = [...links, ...support];
+
 export default function Footer() {
-    return <Styled.Footer>
-        <Styled.FooterInner>
-            <Styled.Brand>Plan smarter. Shop easier.</Styled.Brand>
-            <Styled.Columns>
-                <Styled.Column><Styled.Label>Links</Styled.Label>{links.map(([label, href, IconComponent]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{createElement(IconComponent)}{label}</a>)}</Styled.Column>
-                <Styled.Column><Styled.Label>Support</Styled.Label>{support.map(([label, href, IconComponent]) => <a key={label} href={href} target="_blank" rel="noopener noreferrer">{createElement(IconComponent)}{label}</a>)}</Styled.Column>
-            </Styled.Columns>
-        </Styled.FooterInner>
-        <Styled.Copyright>Copyright &copy; {new Date().getFullYear()} <a href="https://www.ashishranjan.net" target="_blank" rel="noopener noreferrer">Ashish Ranjan</a></Styled.Copyright>
-    </Styled.Footer>;
+    return (
+        <Styled.Footer>
+            <Styled.FooterInner>
+                <Styled.Brand>
+                    <img src={`${import.meta.env.BASE_URL}logo.png`} alt="Ashish Ranjan logo" />
+                    <span>Plan smarter. Shop easier.</span>
+                </Styled.Brand>
+                <Styled.SocialLinks aria-label="Developer and support links">
+                    {allLinks.map(([label, href, IconComponent]) => (
+                        <Styled.IconLink key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
+                            {createElement(IconComponent, { "aria-hidden": true })}
+                        </Styled.IconLink>
+                    ))}
+                </Styled.SocialLinks>
+            </Styled.FooterInner>
+            <Styled.Copyright>
+                Copyright &copy; {new Date().getFullYear()} {" "}
+                <a href="https://www.ashishranjan.net" target="_blank" rel="noopener noreferrer">Ashish Ranjan</a>
+            </Styled.Copyright>
+        </Styled.Footer>
+    );
 }
-import { createElement } from "react";
