@@ -35,6 +35,15 @@ export const Styled = {
         opacity: 0.75;
         font-size: 14px;
     `,
+    StorageNotice: styled.p`
+        margin: 0 0 14px;
+        padding: 10px 12px;
+        border: 1px solid hsl(38 80% 62% / 0.45);
+        border-radius: 10px;
+        color: hsl(40 90% 82%);
+        background: hsl(38 45% 20% / 0.38);
+        font-size: 12px;
+    `,
     BadgeRow: styled.div`
         display: flex;
         gap: 8px;
@@ -140,9 +149,14 @@ export const Styled = {
         &:focus-visible {
             box-shadow: ${focusRing};
         }
-        &:hover {
+        &:hover:not(:disabled) {
             border-color: hsl(226 100% 72% / 0.6);
             box-shadow: 0 0 0 3px hsl(226 100% 72% / 0.1);
+        }
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
         }
     `,
     DangerButton: styled.button`
@@ -159,9 +173,14 @@ export const Styled = {
         &:focus-visible {
             box-shadow: 0 0 0 3px hsl(0 70% 60% / 0.25);
         }
-        &:hover {
+        &:hover:not(:disabled) {
             border-color: hsl(0 70% 70% / 0.95);
             box-shadow: 0 0 0 3px hsl(0 70% 60% / 0.12);
+        }
+        &:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
         }
     `,
     Toolbar: styled.div`
@@ -292,9 +311,14 @@ export const Styled = {
         &:focus-visible {
             box-shadow: ${focusRing};
         }
-        &:hover {
+        &:hover:not(:disabled) {
             border-color: hsl(226 100% 72% / 0.6);
             box-shadow: 0 0 0 3px hsl(226 100% 72% / 0.1);
+        }
+        &:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
         }
     `,
     FooterNote: styled.p`
@@ -312,15 +336,20 @@ export const Styled = {
         display: flex;
         align-items: center;
         justify-content: center;
-        background: hsl(0 0% 100% / 0.03);
-        backdrop-filter: blur(3px);
+        overflow-y: auto;
+        padding: 20px;
+        background: hsl(220 25% 4% / 0.78);
+        backdrop-filter: blur(5px);
     `,
     ModalCard: styled.div`
         width: min(92vw, 520px);
+        max-height: calc(100dvh - 40px);
+        overflow-y: auto;
         border-radius: 16px;
         padding: 16px;
         border: ${border};
-        background: transparent;
+        background: hsl(220 20% 12%);
+        box-shadow: 0 24px 80px hsl(0 0% 0% / 0.45);
     `,
     ModalTitle: styled.h3`
         margin: 2px 0 8px;

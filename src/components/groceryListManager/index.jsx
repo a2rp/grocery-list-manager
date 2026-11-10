@@ -1,13 +1,39 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FiCheck, FiEdit2, FiMinus, FiPlus, FiTrash2 } from "react-icons/fi";
 import { Styled } from "./styled";
 
 const STORAGE_KEY = "grocery-list.v1";
 const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2)}`;
+const safeQuantity = (value) => {
+    const quantity = Number(value);
+    return Number.isFinite(quantity) ? Math.min(9999, Math.max(1, Math.trunc(quantity))) : 1;
+};
+
+const normalizeItem = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    if (typeof value.id !== "string" || !value.id.trim() || typeof value.name !== "string" || !value.name.trim()) return null;
+    return {
+        id: value.id,
+        name: value.name.trim().slice(0, 80),
+        category: typeof value.category === "string" ? value.category.trim().slice(0, 40) : "",
+        qty: safeQuantity(value.qty),
+        bought: value.bought === true,
+        createdAt: Number.isFinite(Number(value.createdAt)) ? Number(value.createdAt) : Date.now(),
+    };
+};
 
 const load = () => {
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY)) ?? [];
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved === null) return [];
+        const parsed = JSON.parse(saved);
+        if (!Array.isArray(parsed)) return [];
+        const seen = new Set();
+        return parsed.map(normalizeItem).filter((item) => {
+            if (!item || seen.has(item.id)) return false;
+            seen.add(item.id);
+            return true;
+        });
     } catch { return []; }
 };
 
@@ -19,20 +45,55 @@ export default function GroceryListManager() {
     const [query, setQuery] = useState("");
     const [catFilter, setCatFilter] = useState("All");
     const [editing, setEditing] = useState(null);
+    const [storageError, setStorageError] = useState(false);
 
     // confirm modal
     const [confirm, setConfirm] = useState(null);
+    const dialogRef = useRef(null);
+    const cancelRef = useRef(null);
+    const nameInputRef = useRef(null);
     const askConfirm = (opts) =>
         setConfirm({ title: "Are you sure?", confirmText: "Confirm", cancelText: "Cancel", tone: "default", ...opts });
     const handleConfirm = useCallback(() => { const fn = confirm?.onConfirm; setConfirm(null); if (fn) fn(); }, [confirm]);
     useEffect(() => {
         if (!confirm) return;
-        const onKey = (e) => { if (e.key === "Escape") setConfirm(null); if (e.key === "Enter") handleConfirm(); };
+        const previousFocus = document.activeElement;
+        cancelRef.current?.focus();
+        const onKey = (event) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                setConfirm(null);
+                return;
+            }
+            if (event.key !== "Tab") return;
+            const focusable = dialogRef.current?.querySelectorAll("button:not(:disabled)");
+            if (!focusable?.length) return;
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
         document.addEventListener("keydown", onKey);
-        return () => document.removeEventListener("keydown", onKey);
-    }, [confirm, handleConfirm]);
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            if (previousFocus instanceof HTMLElement && previousFocus.isConnected) previousFocus.focus();
+            else nameInputRef.current?.focus();
+        };
+    }, [confirm]);
 
-    useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); }, [items]);
+    useEffect(() => {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            setStorageError(false);
+        } catch {
+            setStorageError(true);
+        }
+    }, [items]);
 
     const categories = useMemo(() => ["All", ...Array.from(new Set(items.map(i => i.category).filter(Boolean))).sort((a, b) => a.localeCompare(b))], [items]);
 
@@ -72,9 +133,8 @@ export default function GroceryListManager() {
         e.preventDefault();
         const n = name.trim();
         const c = category.trim();
-        const q = Number(qty) || 1;
         if (!n) return;
-        setItems(prev => [{ id: uid(), name: n, category: c, qty: Math.max(1, q), bought: false, createdAt: Date.now() }, ...prev]);
+        setItems(prev => [{ id: uid(), name: n.slice(0, 80), category: c.slice(0, 40), qty: safeQuantity(qty), bought: false, createdAt: Date.now() }, ...prev]);
         setName(""); setCategory(""); setQty(1);
     };
 
@@ -110,13 +170,17 @@ export default function GroceryListManager() {
                     </Styled.BadgeRow>
                 </Styled.Header>
 
+                {storageError && <Styled.StorageNotice role="status">Your browser could not save this list. Changes will remain only until you leave this page.</Styled.StorageNotice>}
+
                 <Styled.Card as="form" onSubmit={addItem}>
                     <Styled.FormRow>
                         <Styled.Input
+                            ref={nameInputRef}
                             placeholder="Item name *"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             aria-label="Item name"
+                            maxLength={80}
                             required
                         />
                         <Styled.Input
@@ -125,6 +189,7 @@ export default function GroceryListManager() {
                             onChange={(e) => setCategory(e.target.value)}
                             aria-label="Category"
                             list="cat-suggest"
+                            maxLength={40}
                         />
                         <datalist id="cat-suggest">
                             {Array.from(new Set(items.map(i => i.category).filter(Boolean))).map(c => <option key={c} value={c} />)}
@@ -133,6 +198,7 @@ export default function GroceryListManager() {
                             type="number"
                             inputMode="numeric"
                             min="1"
+                            max="9999"
                             step="1"
                             value={qty}
                             onChange={(e) => setQty(e.target.value)}
@@ -161,6 +227,7 @@ export default function GroceryListManager() {
                     <Styled.RowWrap>
                         <Styled.Button
                             type="button"
+                            disabled={!filtered.some((item) => !item.bought)}
                             onClick={() => askConfirm({
                                 title: "Mark visible as bought?",
                                 message: `Mark ${filtered.filter(i => !i.bought).length} item(s) as bought?`,
@@ -174,6 +241,7 @@ export default function GroceryListManager() {
 
                         <Styled.DangerButton
                             type="button"
+                            disabled={!totals.bought}
                             onClick={() => askConfirm({
                                 title: "Clear bought items?",
                                 message: `Remove ${items.filter(i => i.bought).length} bought item(s)?`,
@@ -228,9 +296,9 @@ export default function GroceryListManager() {
                                         </Styled.ItemLeft>
 
                                         <Styled.ItemRight>
-                                            <Styled.IconButton onClick={() => incQty(it.id, +1)} aria-label="Increase quantity"><FiPlus aria-hidden="true" /></Styled.IconButton>
-                                            <Styled.IconButton onClick={() => incQty(it.id, -1)} aria-label="Decrease quantity"><FiMinus aria-hidden="true" /></Styled.IconButton>
-                                            <Styled.IconButton onClick={() => startEdit(it.id)} aria-label="Edit item"><FiEdit2 aria-hidden="true" /></Styled.IconButton>
+                                            <Styled.IconButton type="button" onClick={() => incQty(it.id, +1)} aria-label={`Increase quantity for ${it.name}`} disabled={it.qty >= 9999}><FiPlus aria-hidden="true" /></Styled.IconButton>
+                                            <Styled.IconButton type="button" onClick={() => incQty(it.id, -1)} aria-label={`Decrease quantity for ${it.name}`} disabled={it.qty <= 1}><FiMinus aria-hidden="true" /></Styled.IconButton>
+                                            <Styled.IconButton type="button" onClick={() => startEdit(it.id)} aria-label={`Edit ${it.name}`}><FiEdit2 aria-hidden="true" /></Styled.IconButton>
                                             <Styled.IconButton
                                                 onClick={() => askConfirm({
                                                     title: "Delete item?",
@@ -239,7 +307,8 @@ export default function GroceryListManager() {
                                                     tone: "danger",
                                                     onConfirm: () => removeItem(it.id)
                                                 })}
-                                                aria-label="Delete"
+                                                type="button"
+                                                aria-label={`Delete ${it.name}`}
                                             >
                                                 <FiTrash2 aria-hidden="true" />
                                             </Styled.IconButton>
@@ -256,19 +325,19 @@ export default function GroceryListManager() {
                 {/* Confirm Modal */}
                 {confirm && (
                     <Styled.ModalOverlay onClick={() => setConfirm(null)}>
-                        <Styled.ModalCard role="dialog" aria-modal="true" aria-labelledby="confirm-title" onClick={(e) => e.stopPropagation()}>
+                        <Styled.ModalCard ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby={confirm.message ? "confirm-copy" : undefined} onClick={(e) => e.stopPropagation()}>
                             <Styled.ModalTitle id="confirm-title">{confirm.title}</Styled.ModalTitle>
-                            {confirm.message ? <Styled.ModalMessage>{confirm.message}</Styled.ModalMessage> : null}
+                            {confirm.message ? <Styled.ModalMessage id="confirm-copy">{confirm.message}</Styled.ModalMessage> : null}
                             <Styled.ModalActions>
-                                <Styled.Button type="button" onClick={() => setConfirm(null)}>
+                                <Styled.Button ref={cancelRef} type="button" onClick={() => setConfirm(null)}>
                                     {confirm.cancelText || "Cancel"}
                                 </Styled.Button>
                                 {confirm.tone === "danger" ? (
-                                    <Styled.DangerButton type="button" onClick={handleConfirm} autoFocus>
+                                    <Styled.DangerButton type="button" onClick={handleConfirm}>
                                         {confirm.confirmText || "Confirm"}
                                     </Styled.DangerButton>
                                 ) : (
-                                    <Styled.PrimaryButton type="button" onClick={handleConfirm} autoFocus>
+                                    <Styled.PrimaryButton type="button" onClick={handleConfirm}>
                                         {confirm.confirmText || "Confirm"}
                                     </Styled.PrimaryButton>
                                 )}
@@ -287,11 +356,11 @@ function EditRow({ item, onCancel, onSave }) {
     const [q, setQ] = useState(item.qty);
 
     return (
-        <Styled.Item as="form" onSubmit={(e) => { e.preventDefault(); if (!n.trim()) return; onSave(item.id, { name: n.trim(), category: c.trim(), qty: Math.max(1, Number(q) || 1) }); }}>
+        <Styled.Item as="form" onSubmit={(e) => { e.preventDefault(); if (!n.trim()) return; onSave(item.id, { name: n.trim().slice(0, 80), category: c.trim().slice(0, 40), qty: safeQuantity(q) }); }}>
             <Styled.ItemLeft style={{ alignItems: "center" }}>
-                <Styled.Input value={n} onChange={(e) => setN(e.target.value)} placeholder="Item name *" aria-label="Edit name" required />
-                <Styled.Input value={c} onChange={(e) => setC(e.target.value)} placeholder="Category" aria-label="Edit category" style={{ maxWidth: 180 }} />
-                <Styled.Input type="number" min="1" step="1" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Edit quantity" style={{ maxWidth: 120 }} />
+                <Styled.Input value={n} onChange={(e) => setN(e.target.value)} placeholder="Item name *" aria-label="Edit name" maxLength={80} required />
+                <Styled.Input value={c} onChange={(e) => setC(e.target.value)} placeholder="Category" aria-label="Edit category" maxLength={40} style={{ maxWidth: 180 }} />
+                <Styled.Input type="number" min="1" max="9999" step="1" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Edit quantity" style={{ maxWidth: 120 }} />
             </Styled.ItemLeft>
             <Styled.ItemRight>
                 <Styled.PrimaryButton type="submit">Save</Styled.PrimaryButton>
